@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Kabir</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+</head>
+<body>
+
+  <!-- ── LOADER ── -->
+  <div id="loader" class="loader-container">
+    <div class="loader-inner">
+      <div class="loader-ring ring1"></div>
+      <div class="loader-ring ring2"></div>
+      <div class="loader-ring ring3"></div>
+      <div class="loader-core">
+        <div class="loader-dot"></div>
+      </div>
+    </div>
+    <p class="loader-text">INITIALIZING KABIR . . .</p>
+  </div>
+
+  <!-- ── FACE AUTH ── -->
+  <div id="face-auth-con" class="face-auth-container" style="display:none;">
+    <div class="face-auth-inner">
+      <div class="face-ring outer-ring"></div>
+      <div class="face-ring mid-ring"></div>
+      <!-- Live camera feed from Python -->
+      <div class="face-scan-box">
+        <div class="scan-corner tl"></div>
+        <div class="scan-corner tr"></div>
+        <div class="scan-corner bl"></div>
+        <div class="scan-corner br"></div>
+        <div class="scan-line"></div>
+        <img id="cam-feed" src="" alt="" style="
+          width:100%; height:100%;
+          object-fit:cover; border-radius:2px;
+          display:none; position:absolute; inset:0;
+        "/>
+        <i class="fas fa-user scan-icon" id="scan-placeholder"></i>
+      </div>
+    </div>
+    <p class="face-auth-text" id="face-auth-text">SCANNING FACE . . .</p>
+  </div>
+
+  <!-- ── AUTH FAILED ── -->
+  <div id="auth-failed" class="face-auth-container" style="display:none;">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:20px;">
+      <div style="width:120px;height:120px;border-radius:50%;border:2px solid #ff3030;
+                  box-shadow:0 0 30px rgba(255,48,48,0.4);display:flex;align-items:center;justify-content:center;">
+        <i class="fas fa-times" style="font-size:48px;color:#ff3030;text-shadow:0 0 20px #ff3030;"></i>
+      </div>
+      <p style="font-family:'Orbitron',sans-serif;font-size:13px;letter-spacing:4px;
+                color:#ff3030;text-shadow:0 0 10px #ff3030;">ACCESS DENIED</p>
+      <p style="color:rgba(180,210,240,0.5);font-size:13px;letter-spacing:2px;">Face not recognized. Please re-enroll.</p>
+      <button onclick="location.reload()" style="
+        background:transparent;border:1px solid #ff3030;color:#ff3030;
+        font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:3px;
+        padding:12px 28px;cursor:pointer;margin-top:8px;
+        transition:all 0.2s;
+      " onmouseover="this.style.background='rgba(255,48,48,0.1)'"
+         onmouseout="this.style.background='transparent'">RETRY</button>
+    </div>
+  </div>
+
+  <!-- ── FACE AUTH SUCCESS ── -->
+  <div id="face-auth-success" class="face-auth-success" style="display:none;">
+    <div class="success-ring"></div>
+    <i class="fas fa-check success-check"></i>
+    <p class="success-text">AUTHENTICATION SUCCESSFUL</p>
+  </div>
+
+  <!-- ── MAIN UI ── -->
+  <div id="start" class="main-container" style="display:none;">
+
+    <!-- Left sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <div class="arc-reactor">
+          <div class="arc-outer"></div>
+          <div class="arc-mid"></div>
+          <div class="arc-inner"></div>
+          <div class="arc-core"></div>
+        </div>
+        <span class="sidebar-title">K.A.B.I.R</span>
+      </div>
+
+      <div class="sidebar-stats">
+        <div class="stat-row">
+          <span class="stat-label">STATUS</span>
+          <span class="stat-val online" id="sys-status">ONLINE</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">TIME</span>
+          <span class="stat-val" id="clock">--:--</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">DATE</span>
+          <span class="stat-val" id="date-disp">---</span>
+        </div>
+      </div>
+
+      <div class="sidebar-divider"></div>
+
+      <div class="sidebar-nav">
+        <div class="nav-item active" id="nav-chat" onclick="showPanel('chat')">
+          <i class="fas fa-comment-dots"></i> CHAT
+        </div>
+        <div class="nav-item" id="nav-cmds" onclick="showPanel('cmds')">
+          <i class="fas fa-terminal"></i> COMMANDS
+        </div>
+        <div class="nav-item" id="nav-files" onclick="showPanel('files')">
+          <i class="fas fa-folder-open"></i> FILES
+        </div>
+        <div class="nav-item" id="nav-history" onclick="showPanel('history')">
+          <i class="fas fa-clock-rotate-left"></i> HISTORY
+        </div>
+        <div class="nav-item" id="nav-contacts" onclick="showPanel('contacts')">
+          <i class="fas fa-address-book"></i> CONTACTS
+        </div>
+        <div class="nav-item" id="nav-notifications" onclick="showPanel('notifications')">
+          <i class="fas fa-bell"></i> ALERTS
+          <span class="nav-badge" id="notification-badge" style="display:none;">0</span>
+        </div>
+        <div class="nav-item" id="nav-settings" onclick="showPanel('settings')">
+          <i class="fas fa-sliders"></i> SETTINGS
+        </div>
+        <div class="nav-item" id="nav-logs" onclick="showPanel('logs')">
+          <i class="fas fa-file-lines"></i> LOGS
+        </div>
+        <div class="nav-item" id="nav-profile" onclick="showPanel('profile')">
+          <i class="fas fa-id-card"></i> PROFILE
+        </div>
+      </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="content">
+      <div class="backend-banner" id="backend-banner" style="display:none;">
+        <i class="fas fa-triangle-exclamation"></i>
+        <span id="backend-banner-text">BACKEND DISCONNECTED</span>
+      </div>
+      <div class="shutdown-banner" id="shutdown-banner" style="display:none;">
+        <div>
+          <strong id="shutdown-action">SHUTDOWN</strong>
+          <span id="shutdown-countdown">30</span>
+        </div>
+        <button onclick="cancelScheduledShutdown()"><i class="fas fa-xmark"></i> CANCEL</button>
+      </div>
+
+      <!-- CHAT PANEL -->
+      <div class="panel" id="panel-chat">
+        <div class="panel-header">
+          <div class="header-title">
+            <span class="dot active-dot"></span> KABIR INTERFACE
+          </div>
+          <div class="header-mic-status" id="mic-status-bar">READY</div>
+        </div>
+
+        <!-- Chat messages -->
+        <div class="chat-box" id="chat-box">
+          <div class="chat-msg kabir-msg">
+            <span class="msg-tag">KABIR</span>
+            <p>Hello Sir. All systems are online. How may I assist you today?</p>
+          </div>
+        </div>
+
+        <!-- Visualizer -->
+        <div class="visualizer" id="visualizer">
+          <div class="v-bar" style="height:6px"></div>
+          <div class="v-bar" style="height:14px"></div>
+          <div class="v-bar" style="height:8px"></div>
+          <div class="v-bar" style="height:20px"></div>
+          <div class="v-bar" style="height:12px"></div>
+          <div class="v-bar" style="height:24px"></div>
+          <div class="v-bar" style="height:10px"></div>
+          <div class="v-bar" style="height:18px"></div>
+          <div class="v-bar" style="height:6px"></div>
+          <div class="v-bar" style="height:14px"></div>
+          <div class="v-bar" style="height:22px"></div>
+          <div class="v-bar" style="height:8px"></div>
+        </div>
+
+        <!-- Input area -->
+        <div class="input-row">
+          <div class="chat-input-wrap">
+            <input type="text" id="text-input" class="chat-input" placeholder="Type a command . . ." autocomplete="off"/>
+            <div class="command-suggestions" id="command-suggestions" style="display:none;"></div>
+          </div>
+          <button class="btn-send" onclick="sendTextCmd()"><i class="fas fa-paper-plane"></i></button>
+          <button class="btn-mic" id="mic-btn" onclick="startListening()">
+            <i class="fas fa-microphone" id="mic-icon"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- COMMANDS PANEL -->
+      <div class="panel" id="panel-cmds" style="display:none;">
+        <div class="panel-header">
+          <div class="header-title"><span class="dot active-dot"></span> QUICK COMMANDS</div>
+        </div>
+        <div class="cmd-grid">
+          <div class="cmd-card" onclick="sendCmd('what is the time')"><i class="fas fa-clock"></i><span>TIME</span></div>
+          <div class="cmd-card" onclick="sendCmd('what is the date')"><i class="fas fa-calendar"></i><span>DATE</span></div>
+          <div class="cmd-card" onclick="sendCmd('open youtube')"><i class="fab fa-youtube"></i><span>YOUTUBE</span></div>
+          <div class="cmd-card" onclick="sendCmd('open google')"><i class="fab fa-google"></i><span>GOOGLE</span></div>
+          <div class="cmd-card" onclick="sendCmd('weather in Mumbai')"><i class="fas fa-cloud-sun"></i><span>WEATHER</span></div>
+          <div class="cmd-card" onclick="sendCmd('top news')"><i class="fas fa-newspaper"></i><span>NEWS</span></div>
+          <div class="cmd-card" onclick="sendCmd('send message')"><i class="fas fa-message"></i><span>MESSAGE</span></div>
+          <div class="cmd-card" onclick="sendCmd('play music')"><i class="fas fa-music"></i><span>MUSIC</span></div>
+          <div class="cmd-card" onclick="sendCmd('take screenshot')"><i class="fas fa-camera"></i><span>SCREENSHOT</span></div>
+          <div class="cmd-card" onclick="sendCmd('call')"><i class="fas fa-phone"></i><span>CALL</span></div>
+          <div class="cmd-card" onclick="sendCmd('setup wireless phone')"><i class="fas fa-wifi"></i><span>WIRELESS</span></div>
+          <div class="cmd-card" onclick="sendCmd('pick up call')"><i class="fas fa-phone-volume"></i><span>PICKUP</span></div>
+          <div class="cmd-card" onclick="sendCmd('disconnect call')"><i class="fas fa-phone-slash"></i><span>DISCONNECT</span></div>
+          <div class="cmd-card" onclick="sendCmd('open calculator')"><i class="fas fa-calculator"></i><span>CALCULATOR</span></div>
+          <div class="cmd-card" onclick="sendCmd('open notepad')"><i class="fas fa-file-alt"></i><span>NOTEPAD</span></div>
+          <div class="cmd-card" onclick="sendCmd('volume up')"><i class="fas fa-volume-up"></i><span>VOL UP</span></div>
+          <div class="cmd-card" onclick="sendCmd('volume down')"><i class="fas fa-volume-down"></i><span>VOL DOWN</span></div>
+          <div class="cmd-card" onclick="sendCmd('minimise the window')"><i class="fas fa-window-minimize"></i><span>MINIMISE</span></div>
+          <div class="cmd-card" onclick="sendCmd('empty recycle bin')"><i class="fas fa-trash"></i><span>EMPTY BIN</span></div>
+          <div class="cmd-card" onclick="sendCmd('shutdown')"><i class="fas fa-power-off"></i><span>SHUTDOWN</span></div>
+        </div>
+      </div>
+
+      <!-- FILE SEARCH PANEL -->
+      <div class="panel" id="panel-files" style="display:none;">
+        <div class="panel-header">
+          <div class="header-title"><span class="dot active-dot"></span> FILE EXPLORER</div>
+          <div class="header-mic-status" id="file-search-status">READY</div>
+        </div>
+        <div class="file-panel">
+          <div class="file-search-row">
+            <div class="file-input-wrap">
+              <i class="fas fa-magnifying-glass"></i>
+              <input type="text" id="file-query" class="profile-input" placeholder="Search file name or path . . ." autocomplete="off"/>
+            </div>
+            <input type="text" id="file-root" class="profile-input" placeholder="Folder path, blank = app folder + user home"/>
+            <button class="file-search-btn" onclick="searchExplorerFiles()">
+              <i class="fas fa-search"></i><span>SEARCH</span>
+            </button>
+          </div>
+          <div class="file-results" id="file-results">
+            <div class="file-empty">
+              <i class="fas fa-folder-tree"></i>
+              <span>ENTER A FILE NAME OR PATH TO BEGIN</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HISTORY PANEL -->
+      <div class="panel" id="panel-history" style="display:none;">
+        <div class="panel-header">
+          <div class="header-title"><span class="dot active-dot"></span> PERSONAL KNOWLEDGE BASE</div>
+          <div class="history-actions">
+            <button class="history-refresh-btn" title="Refresh history" onclick="loadHistoryPanel()">
+              <i class="fas fa-rotate"></i>
+            </button>
+            <button class="history-refresh-btn" title="Clear chat history" onclick="clearChatHistory()">
+              <i class="fas fa-comments-slash"></i>
+            </button>
+            <button class="history-refresh-btn" title="Clear command and chat history" onclick="clearAllHistory()">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+        <div class="memory-search-row">
+          <div class="file-input-wrap">
+            <i class="fas fa-database"></i>
+            <input type="text" id="memory-query" class="profile-input" placeholder="Search memory, e.g. AI last Tuesday . . ." autocomplete="off"/>
+          </div>
+          <button class="file-search-btn" onclick="searchMemoryPanel()">
+            <i class="fas fa-search"></i><span>SEARCH</span>
+          </button>
+        </div>
+        <div class="history-panel">
+          <div class="history-column">
+            <div class="history-section-title">SEARCH RESULTS</div>
+            <div class="history-list" id="memory-results">
+              <div class="history-empty">ASK WHAT KABIR REMEMBERS</div>
+            </div>
+          </div>
+          <div class="history-column">
+            <div class="history-section-title">RECENT COMMANDS</div>
+            <div class="history-list" id="history-commands">
+              <div class="history-empty">NO COMMANDS RECORDED</div>
+            </div>
+          </div>
+          <div class="history-column">
+            <div class="history-section-title">CONVERSATION MEMORY</div>
+            <div class="history-list" id="history-messages">
+              <div class="history-empty">NO MESSAGES RECORDED</div>
+            </div>
+          </div>
+          <div class="history-column compact">
+            <div class="history-section-title">FREQUENT</div>
+            <div class="history-list" id="history-frequent">
+              <div class="history-empty">LEARNING COMMANDS</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTACTS PANEL -->
+      <div class="panel" id="panel-contacts" style="display:none;">
+        <div class="panel-header">
+          <div class="header-title"><span class="dot active-dot"></span> CONTACTS</div>
+          <div class="header-mic-status" id="contacts-status">ENCRYPTED LOCAL STORE</div>
+        </div>
+        <div class="contacts-panel">
+          <div class="contacts-form">
+            <input type="hidden" id="contact-id"/>
+            <label>
+              <span>NAME</span>
+              <input type="text" id="contact-name" class="profile-input" autocomplete="name"/>
+            </label>
+            <label>
+              <span>PHONE</span>
+              <input type="tel" id="contact-phone" class="profile-input" autocomplete="tel"/>
+            </label>
+            <label>
+              <span>EMAIL</span>
+              <input type="email" id="contact-email" class="profile-input" autocomplete="email"/>
+            </label>
+            <label>
+              <span>ALIASES</span>
+              <input type="text" id="contact-aliases" class="profile-input" placeholder="mom, office, first name"/>
+            </label>
+            <div class="contact-form-actions">
+              <button class="profile-save" onclick="saveContactForm()">
+                <i class="fas fa-floppy-disk"></i><span>SAVE CONTACT</span>
+              </button>
+              <button class="contact-secondary" onclick="resetContactForm()" title="New contact">
+                <i class="fas fa-plus"></i>
+              </button>
+            </div>
+          </div>
+          <div class="contacts-list" id="contacts-list">
+            <div class="history-empty">NO CONTACTS SAVED</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NOTIFICATIONS PANEL -->
+      <div class="panel" id="panel-notifications" style="display:none;">
+        <div class="panel-header">
+          <div class="header-title"><span class="dot active-dot"></span> NOTIFICATION CENTER</div>
+          <div class="notification-actions">
+            <button class="history-refresh-btn" title="Mark all read" onclick="markAllNotificationsRead()">
+              <i class="fas fa-check-double"></i>
+            </button>
+            <button class="history-refresh-btn" title="Clear notifications" onclick="clearNotifications()">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+        <div class="notification-panel">
+          <div class="notification-compose">
+            <select id="notification-type" class="profile-input">
+              <option value="reminder">Reminder</option>
+              <option value="calendar">Calendar</option>
+              <option value="email">Email</option>
+            </select>
+            <input type="text" id="notification-title" class="profile-input" placeholder="Notification title"/>
+            <input type="text" id="notification-detail" class="profile-input" placeholder="Optional details"/>
+            <button class="notification-add" onclick="addManualNotification()">
+              <i class="fas fa-plus"></i><span>ADD</span>
+            </button>
+          </div>
+          <div class="notification-summary">
+            <div class="notification-stat">
+              <span>UNREAD</span><strong id="notification-unread-count">0</strong>
+            </div>
+            <div class="notification-stat">
+              <span>REMINDERS</span><strong id="notification-reminder-count">0</strong>
+            </div>
+            <div class="notification-stat">
+              <span>CALENDAR</span><strong id="notification-calendar-count">0</strong>
+            </div>
+            <div class="notification-stat">
+              <span>EMAIL</span><strong id="notification-email-count">0</strong>
+            </div>
+          </div>
+          <div class="notification-list" id="notification-list">
+            <div class="notification-empty">
+              <i class="fas fa-bell-slash"></i>
+              <span>NO NOTIFICATIONS RECORDED</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS PANEL -->
+      <div class="panel" id="panel-settings" style="display:none;">
+        <div class="panel-header">
+          <div class="header-title"><span class="dot active-dot"></span> LOCAL SETTINGS</div>
+          <div class="header-mic-status" id="settings-status">LOCAL STORE</div>
+        </div>
+        <div class="settings-panel">
+          <div class="settings-form">
+            <label>
+              <span>DEFAULT WEATHER CITY</span>
+              <input type="text" id="settings-default-city" class="profile-input" placeholder="Mumbai"/>
+            </label>
+            <label>
+              <span>PREFERRED MUSIC PLATFORM</span>
+              <select id="settings-music-platform" class="profile-input">
+                <option value="youtube">YouTube</option>
+                <option value="spotify">Spotify</option>
+              </select>
+            </label>
+            <label>
+              <span>VOICE ENGINE</span>
+              <select id="settings-voice-engine" class="profile-input">
+                <option value="neural">Neural</option>
+                <option value="edge">Edge Neural</option>
+                <option value="local">Local</option>
+              </select>
+            </label>
+            <label>
+              <span>VOICE RATE</span>
+              <input type="text" id="settings-voice-rate" class="profile-input" placeholder="+20%"/>
+            </label>
+            <label>
+              <span>THEME</span>
+              <select id="settings-theme" class="profile-input">
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+              </select>
+            </label>
+            <label class="profile-check settings-check">
+              <input type="checkbox" id="settings-wake-enabled"/>
+              <span>WAKE WORD ENABLED</span>
+            </label>
+            <label>
+              <span>WAKE WORD PHRASE</span>
+              <input type="text" id="settings-wake-phrase" class="profile-input" placeholder="Hey Kabir"/>
+            </label>
+            <label>
+              <span>PORCUPINE BUILT-IN KEYWORD</span>
+              <input type="text" id="settings-wake-keyword" class="profile-input" placeholder="kabir"/>
+            </label>
+            <label>
+              <span>CUSTOM KEYWORD PATH</span>
+              <input type="text" id="settings-wake-path" class="profile-input" placeholder="Optional .ppn file path"/>
+            </label>
+            <label>
+              <span>WAKE SENSITIVITY</span>
+              <input type="number" id="settings-wake-sensitivity" class="profile-input" min="0" max="1" step="0.05"/>
+            </label>
+            <label>
+              <span>HISTORY MAX ITEMS</span>
+              <input type="number" id="settings-history-max" class="profile-input" min="100" max="50000"/>
+            </label>
+            <label>
+              <span>HISTORY RETENTION DAYS</span>
+              <input type="number" id="settings-history-days" class="profile-input" min="1" max="3650"/>
+            </label>
+            <label class="settings-wide">
+              <span>EXTRA SAFE FILE ROOTS</span>
+              <textarea id="settings-safe-roots" class="profile-input settings-textarea" placeholder="One folder path per line"></textarea>
+            </label>
+            <button class="profile-save" onclick="saveSettingsForm()">
+              <i class="fas fa-floppy-disk"></i><span>SAVE SETTINGS</span>
+            </button>
+          </div>
+          <div class="profile-summary">
+            <div class="summary-title">LOCAL DATA</div>
+            <div class="summary-line"><span>CONTACTS</span><strong>Encrypted local store</strong></div>
+            <div class="summary-line"><span>HISTORY</span><strong id="settings-history-summary">5000 items / 180 days</strong></div>
+            <div class="summary-line"><span>SAFE ROOTS</span><strong id="settings-roots-summary">Default folders</strong></div>
+            <p>Settings are stored locally in <strong>engine/settings.json</strong>. Secrets remain in .env or encrypted profile storage.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOGS PANEL -->
+      <div class="panel" id="panel-logs" style="display:none;">
+        <div class="panel-header">
+          <div class="header-title"><span class="dot active-dot"></span> LOG VIEWER</div>
+          <div class="history-actions">
+            <button class="history-refresh-btn" title="Refresh logs" onclick="loadLogsPanel()">
+              <i class="fas fa-rotate"></i>
+            </button>
+          </div>
+        </div>
+        <div class="logs-panel">
+          <pre id="logs-output">NO LOGS LOADED</pre>
+        </div>
+      </div>
+
+      <!-- PROFILE PANEL -->
+      <div class="panel" id="panel-profile" style="display:none;">
+        <div class="panel-header">
+          <div class="header-title"><span class="dot active-dot"></span> USER PROFILE</div>
+          <div class="header-mic-status" id="profile-status">NOT CONFIGURED</div>
+        </div>
+        <div class="profile-panel">
+          <div class="profile-form">
+            <label>
+              <span>NAME</span>
+              <input type="text" id="profile-name" class="profile-input" autocomplete="name"/>
+            </label>
+            <label>
+              <span>AGE</span>
+              <input type="number" id="profile-age" class="profile-input" min="1" max="120"/>
+            </label>
+            <label>
+              <span>EMAIL ID</span>
+              <input type="email" id="profile-email" class="profile-input" autocomplete="email"/>
+            </label>
+            <label>
+              <span>SMTP USERNAME</span>
+              <input type="text" id="profile-smtp-user" class="profile-input" placeholder="Blank = same as email"/>
+            </label>
+            <label>
+              <span>MAIL PASSWORD / APP PASSWORD</span>
+              <input type="password" id="profile-password" class="profile-input" autocomplete="current-password"/>
+            </label>
+            <label>
+              <span>MAIL PROVIDER</span>
+              <select id="profile-provider" class="profile-input" onchange="updateProviderHint()">
+                <option value="auto">Auto detect</option>
+                <option value="gmail">Gmail</option>
+                <option value="zimbra">Zimbra</option>
+                <option value="outlook">Outlook / Hotmail</option>
+                <option value="yahoo">Yahoo</option>
+                <option value="icloud">iCloud</option>
+                <option value="custom">Custom SMTP</option>
+              </select>
+            </label>
+            <label>
+              <span>SMTP HOST</span>
+              <input type="text" id="profile-smtp-host" class="profile-input" placeholder="Auto or mail.yourdomain.com"/>
+            </label>
+            <div class="profile-row">
+              <label>
+                <span>SMTP PORT</span>
+                <input type="number" id="profile-smtp-port" class="profile-input" value="587"/>
+              </label>
+              <label class="profile-check">
+                <input type="checkbox" id="profile-use-tls" checked/>
+                <span>STARTTLS</span>
+              </label>
+            </div>
+            <button class="profile-save" onclick="saveProfileForm()">
+              <i class="fas fa-floppy-disk"></i><span>SAVE PROFILE</span>
+            </button>
+          </div>
+          <div class="profile-summary">
+            <div class="summary-title">MAIL ROUTE</div>
+            <div class="summary-line"><span>FROM</span><strong id="summary-email">-</strong></div>
+            <div class="summary-line"><span>PROVIDER</span><strong id="summary-provider">AUTO</strong></div>
+            <div class="summary-line"><span>SMTP</span><strong id="summary-smtp">-</strong></div>
+            <p id="provider-hint">
+              Gmail requires an app password. Zimbra usually uses your organization's SMTP host, for example mail.yourdomain.com.
+            </p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right panel — arc reactor area -->
+    <div class="right-panel">
+      <div class="arc-display arc-display-btn" id="arc-display-btn" onclick="speakGreeting()" role="button" tabindex="0" title="Click to hear Kabir's greeting">
+        <div class="arc-reactor large" id="main-arc">
+          <div class="arc-outer"></div>
+          <div class="arc-mid"></div>
+          <div class="arc-inner"></div>
+          <div class="arc-core" id="arc-core"></div>
+        </div>
+        <p class="arc-label" id="arc-label">STANDBY</p>
+      </div>
+      <div class="right-info">
+        <div class="info-row"><span class="info-key">VOICE</span><span class="info-val" id="voice-status">IDLE</span></div>
+        <div class="info-row"><span class="info-key">COMMAND</span><span class="info-val" id="last-cmd">—</span></div>
+        <div class="info-row"><span class="info-key">MODE</span><span class="info-val">ASSISTANT</span></div>
+      </div>
+      <div class="telemetry-panel" id="telemetry-panel">
+        <div class="telemetry-head">
+          <span>LIVE SYSTEM</span>
+          <strong id="telemetry-updated">--:--:--</strong>
+        </div>
+        <div class="telemetry-grid">
+          <div class="telemetry-gauge" data-stat="cpu">
+            <svg viewBox="0 0 84 84" aria-hidden="true">
+              <circle class="gauge-track" cx="42" cy="42" r="34"></circle>
+              <circle class="gauge-arc" id="gauge-cpu" cx="42" cy="42" r="34"></circle>
+            </svg>
+            <div class="gauge-copy"><span>CPU</span><strong id="cpu-value">--%</strong></div>
+          </div>
+          <div class="telemetry-gauge" data-stat="gpu">
+            <svg viewBox="0 0 84 84" aria-hidden="true">
+              <circle class="gauge-track" cx="42" cy="42" r="34"></circle>
+              <circle class="gauge-arc" id="gauge-gpu" cx="42" cy="42" r="34"></circle>
+            </svg>
+            <div class="gauge-copy"><span>GPU</span><strong id="gpu-value">--%</strong></div>
+          </div>
+          <div class="telemetry-gauge" data-stat="ram">
+            <svg viewBox="0 0 84 84" aria-hidden="true">
+              <circle class="gauge-track" cx="42" cy="42" r="34"></circle>
+              <circle class="gauge-arc" id="gauge-ram" cx="42" cy="42" r="34"></circle>
+            </svg>
+            <div class="gauge-copy"><span>RAM</span><strong id="ram-value">--%</strong></div>
+          </div>
+          <div class="telemetry-gauge" data-stat="disk">
+            <svg viewBox="0 0 84 84" aria-hidden="true">
+              <circle class="gauge-track" cx="42" cy="42" r="34"></circle>
+              <circle class="gauge-arc" id="gauge-disk" cx="42" cy="42" r="34"></circle>
+            </svg>
+            <div class="gauge-copy"><span>DISK</span><strong id="disk-value">--%</strong></div>
+          </div>
+        </div>
+        <div class="network-gauge">
+          <div class="net-ring">
+            <svg viewBox="0 0 84 84" aria-hidden="true">
+              <circle class="gauge-track" cx="42" cy="42" r="34"></circle>
+              <circle class="gauge-arc" id="gauge-network" cx="42" cy="42" r="34"></circle>
+            </svg>
+            <i class="fas fa-network-wired"></i>
+          </div>
+          <div class="net-copy">
+            <span>NETWORK</span>
+            <strong id="network-value">--</strong>
+            <small id="network-detail">UP -- / DOWN --</small>
+          </div>
+        </div>
+        <div class="thermal-row">
+          <div><span>CPU TEMP</span><strong id="cpu-temp">--</strong></div>
+          <div><span>GPU TEMP</span><strong id="gpu-temp">--</strong></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script type="text/javascript" src="/eel.js"></script>
+  <script src="main.js"></script>
+  <script src="controller.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
